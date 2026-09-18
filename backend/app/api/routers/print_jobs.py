@@ -44,6 +44,9 @@ def _a_read(job: PrintJob) -> PrintJobRead:
         if job.sale_price_eur is not None and resultado.cost_eur is not None
         else None
     )
+    resultado.makerworld_url = (
+        f"https://makerworld.com/en/models/{job.design_id}" if job.design_id else None
+    )
     return resultado
 
 

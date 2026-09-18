@@ -65,6 +65,9 @@ class PrintJobRead(BaseModel):
     print_duration_min: int | None
     thumbnail_url: str | None
     notes: str | None
+    ended_at: datetime | None = None
+    print_succeeded: bool | None = None
     created_at: datetime
     cost_eur: float | None = None
     profit_eur: float | None = None
+    makerworld_url: str | None = None

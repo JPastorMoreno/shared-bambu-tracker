@@ -176,6 +176,19 @@ export function PrintJobs() {
                           {impresion.source === 'bambu_sync' && (
                             <span className="print-job-source">Bambu Cloud</span>
                           )}
+                          {impresion.print_succeeded === false && (
+                            <span className="badge badge-critical">Impresión fallida</span>
+                          )}
+                          {impresion.makerworld_url && (
+                            <a
+                              className="print-job-source"
+                              href={impresion.makerworld_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              Ver en MakerWorld
+                            </a>
+                          )}
                         </div>
                         <div className="print-job-meta">
                           <span>{formatFechaHora(impresion.printed_at)}</span>

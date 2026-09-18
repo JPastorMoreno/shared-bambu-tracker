@@ -556,6 +556,15 @@ a.btn {
   padding: 1px 8px;
 }
 
+a.print-job-source {
+  text-decoration: none;
+}
+
+a.print-job-source:hover {
+  color: var(--series-1);
+  border-color: var(--series-1);
+}
+
 .print-job-meta {
   display: flex;
   flex-wrap: wrap;

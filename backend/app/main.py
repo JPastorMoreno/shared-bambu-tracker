@@ -44,6 +44,15 @@ async def _migrar_columnas_nuevas() -> None:
             await conn.execute(text("ALTER TABLE print_jobs ADD COLUMN sale_price_eur FLOAT"))
             logger.info("Migración: añadida columna print_jobs.sale_price_eur")
 
+        for columna, tipo_sql in (
+            ("design_id", "INTEGER"),
+            ("ended_at", "DATETIME"),
+            ("print_succeeded", "BOOLEAN"),
+        ):
+            if not await conn.run_sync(lambda c, col=columna: _tiene_columna(c, "print_jobs", col)):
+                await conn.execute(text(f"ALTER TABLE print_jobs ADD COLUMN {columna} {tipo_sql}"))
+                logger.info("Migración: añadida columna print_jobs.%s", columna)
+
 
 async def _sembrar_datos_iniciales() -> None:
     async with engine.begin() as conn:

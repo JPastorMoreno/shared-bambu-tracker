@@ -70,8 +70,11 @@ export interface PrintJob {
   print_duration_min: number | null
   thumbnail_url: string | null
   notes: string | null
+  ended_at: string | null
+  print_succeeded: boolean | null
   cost_eur: number | null
   profit_eur: number | null
+  makerworld_url: string | null
 }
 
 export interface PrintJobCreate {

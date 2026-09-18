@@ -1,6 +1,6 @@
 import logging
 import uuid
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 
 import httpx
@@ -49,6 +49,12 @@ class BambuToken:
 
 
 @dataclass
+class BambuTaskFilamentoDTO:
+    material: str
+    grams: float
+
+
+@dataclass
 class BambuTaskDTO:
     external_task_id: str
     printed_at: datetime
@@ -56,6 +62,10 @@ class BambuTaskDTO:
     print_duration_min: int | None = None
     thumbnail_url: str | None = None
     grams_used_estimado: float | None = None
+    design_id: int | None = None
+    ended_at: datetime | None = None
+    print_succeeded: bool | None = None
+    filamentos: list[BambuTaskFilamentoDTO] = field(default_factory=list)
 
 
 @dataclass
@@ -157,6 +167,23 @@ class BambuCloudClient:
                 continue
             printed_at = datetime.fromisoformat(inicio)
             cost_time_seg = item.get("costTime")
+
+            fin = item.get("endTime")
+            ended_at = datetime.fromisoformat(fin) if fin else None
+
+            design_id = item.get("designId") or None
+
+            failed_type = item.get("failedType")
+            print_succeeded = (failed_type == 0) if failed_type is not None else None
+
+            gramos_por_material: dict[str, float] = {}
+            for entrada in item.get("amsDetailMapping") or []:
+                material = entrada.get("filamentType")
+                gramos = entrada.get("weight")
+                if not material or not gramos:
+                    continue
+                gramos_por_material[material] = gramos_por_material.get(material, 0.0) + float(gramos)
+
             tareas.append(
                 BambuTaskDTO(
                     external_task_id=str(item.get("id")),
@@ -165,6 +192,13 @@ class BambuCloudClient:
                     print_duration_min=cost_time_seg // 60 if cost_time_seg else None,
                     thumbnail_url=item.get("cover"),
                     grams_used_estimado=item.get("weight"),
+                    design_id=design_id,
+                    ended_at=ended_at,
+                    print_succeeded=print_succeeded,
+                    filamentos=[
+                        BambuTaskFilamentoDTO(material=material, grams=round(gramos, 1))
+                        for material, gramos in gramos_por_material.items()
+                    ],
                 )
             )
         return tareas

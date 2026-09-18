@@ -24,7 +24,12 @@ export function PrintJobReviewForm({ printJob, personas, compras }: PrintJobRevi
   const [personId, setPersonId] = useState<string>('')
   const [thirdPartyName, setThirdPartyName] = useState('')
   const [thirdPartyCharge, setThirdPartyCharge] = useState('')
-  const [filamentUsages, setFilamentUsages] = useState<PrintJobFilamentUsageInput[]>([])
+  const [filamentUsages, setFilamentUsages] = useState<PrintJobFilamentUsageInput[]>(() =>
+    printJob.filament_usages.map((uso) => ({
+      filament_purchase_id: uso.filament_purchase_id,
+      grams_used: uso.grams_used,
+    })),
+  )
   const [salePrice, setSalePrice] = useState('')
 
   function manejarEnvio(evento: FormEvent) {

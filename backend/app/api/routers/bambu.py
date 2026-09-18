@@ -7,10 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.crud import bambu_account as crud_bambu_account
+from app.crud import filament_purchase as crud_purchase
 from app.crud import print_job as crud_print_job
 from app.db.session import get_db
 from app.models.bambu_account import BambuAccount
+from app.models.filament_purchase import FilamentPurchase
 from app.models.print_job import STATUS_PENDING_REVIEW, SOURCE_BAMBU_SYNC, PrintJob
+from app.models.print_job_filament import PrintJobFilament
 from app.schemas.bambu import (
     BambuLoginStart,
     BambuLoginStartResult,
@@ -91,6 +94,28 @@ async def get_status(db: AsyncSession = Depends(get_db)):
     )
 
 
+def _sugerir_filament_usages(
+    filamentos, compras: list[FilamentPurchase]
+) -> list[PrintJobFilament]:
+    """Para cada material real reportado por el AMS en la impresión, busca si hay
+    una única bobina propia de ese material con stock: si es inequívoco, lo deja
+    ya seleccionado en la revisión; si hay varias o ninguna, lo deja sin sugerir
+    (el usuario elige a mano, como hasta ahora)."""
+    sugerencias = []
+    for filamento in filamentos:
+        candidatas = [
+            compra
+            for compra in compras
+            if compra.material.strip().lower() == filamento.material.strip().lower()
+            and compra.remaining_weight_g > 0
+        ]
+        if len(candidatas) == 1:
+            sugerencias.append(
+                PrintJobFilament(filament_purchase_id=candidatas[0].id, grams_used=filamento.grams)
+            )
+    return sugerencias
+
+
 @router.post("/sync", response_model=BambuSyncResult)
 async def post_sync(
     db: AsyncSession = Depends(get_db),
@@ -105,6 +130,8 @@ async def post_sync(
     except BambuSyncError as e:
         logger.debug("Error sincronizando con Bambu Cloud: %s", str(e)[:80])
         raise HTTPException(status_code=502, detail=str(e)[:200]) from e
+
+    compras = await crud_purchase.listar_compras(db)
 
     creados = 0
     for tarea in tareas:
@@ -122,7 +149,11 @@ async def post_sync(
             print_duration_min=tarea.print_duration_min,
             thumbnail_url=tarea.thumbnail_url,
             grams_used=tarea.grams_used_estimado,
+            design_id=tarea.design_id,
+            ended_at=tarea.ended_at,
+            print_succeeded=tarea.print_succeeded,
         )
+        print_job.filament_usages = _sugerir_filament_usages(tarea.filamentos, compras)
         await crud_print_job.crear_print_job(db, print_job)
         creados += 1
 
