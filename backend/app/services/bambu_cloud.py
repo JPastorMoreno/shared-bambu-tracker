@@ -11,6 +11,7 @@ BAMBU_API_BASE_URL = "https://api.bambulab.com"
 LOGIN_PATH = "/v1/user-service/user/login"
 EMAIL_CODE_PATH = "/v1/user-service/user/sendemail/code"
 TASKS_PATH = "/v1/user-service/my/tasks"
+DESIGN_PATH = "/v1/design-service/design/{design_id}"
 
 TOKEN_VALIDEZ_DIAS = 90
 
@@ -55,6 +56,30 @@ class BambuTaskDTO:
     print_duration_min: int | None = None
     thumbnail_url: str | None = None
     grams_used_estimado: float | None = None
+
+
+@dataclass
+class BambuDesignFilamentDTO:
+    type: str
+    color_hex: str | None
+    grams: float
+
+
+@dataclass
+class BambuDesignInstanceDTO:
+    id: int
+    title: str
+    is_default: bool
+    total_grams: float
+    estimated_seconds: int | None
+    filaments: list[BambuDesignFilamentDTO]
+
+
+@dataclass
+class BambuDesignDTO:
+    title: str
+    cover_url: str | None
+    instances: list[BambuDesignInstanceDTO]
 
 
 class BambuCloudClient:
@@ -143,6 +168,57 @@ class BambuCloudClient:
                 )
             )
         return tareas
+
+    async def obtener_diseno(self, access_token: str, design_id: int) -> BambuDesignDTO:
+        """Datos públicos de un diseño de MakerWorld (mismo token de cuenta que el
+        resto de la API cloud): título y, por cada perfil/instancia de impresión,
+        gramos totales y filamentos usados según las placas ya sliceadas."""
+        try:
+            async with httpx.AsyncClient(base_url=BAMBU_API_BASE_URL, timeout=10.0) as client:
+                response = await client.get(
+                    DESIGN_PATH.format(design_id=design_id),
+                    headers={**CABECERAS_NAVEGADOR, "Authorization": f"Bearer {access_token}"},
+                )
+                response.raise_for_status()
+                data = response.json()
+        except (httpx.HTTPError, ValueError) as e:
+            logger.debug("Fallo al obtener diseño %s de MakerWorld: %s", design_id, str(e)[:80])
+            raise BambuSyncError(f"No se pudo obtener el diseño de MakerWorld: {str(e)}") from e
+
+        default_instance_id = data.get("defaultInstanceId")
+        instances = []
+        for instance in data.get("instances") or []:
+            extension = instance.get("extention") or {}
+            model_info = extension.get("modelInfo") or {}
+            plates = model_info.get("plates") or []
+            total_grams = sum(plate.get("weight") or 0 for plate in plates)
+            estimated_seconds = sum(plate.get("prediction") or 0 for plate in plates) or None
+
+            gramos_por_filamento: dict[tuple[str, str], float] = {}
+            for plate in plates:
+                for filamento in plate.get("filaments") or []:
+                    clave = (filamento.get("type", ""), filamento.get("color", ""))
+                    gramos_por_filamento[clave] = gramos_por_filamento.get(clave, 0.0) + float(
+                        filamento.get("usedG") or 0
+                    )
+
+            instances.append(
+                BambuDesignInstanceDTO(
+                    id=instance.get("id"),
+                    title=instance.get("title") or "Perfil sin nombre",
+                    is_default=instance.get("id") == default_instance_id,
+                    total_grams=round(total_grams, 1),
+                    estimated_seconds=estimated_seconds,
+                    filaments=[
+                        BambuDesignFilamentDTO(type=tipo, color_hex=color or None, grams=round(gramos, 1))
+                        for (tipo, color), gramos in gramos_por_filamento.items()
+                    ],
+                )
+            )
+
+        return BambuDesignDTO(
+            title=data.get("title", ""), cover_url=data.get("coverUrl"), instances=instances
+        )
 
     async def _post_bambu(self, path: str, payload: dict) -> dict:
         try:

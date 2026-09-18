@@ -253,3 +253,28 @@ export interface InventoryProjection {
   total_deficit_g: number
   projects_without_material: number
 }
+
+export interface DesignEstimateRequest {
+  url: string
+}
+
+export interface DesignFilamentEstimate {
+  type: string
+  color_hex: string | null
+  grams: number
+}
+
+export interface DesignInstanceEstimate {
+  id: number
+  title: string
+  is_default: boolean
+  total_grams: number
+  estimated_print_minutes: number | null
+  filaments: DesignFilamentEstimate[]
+}
+
+export interface DesignEstimateResponse {
+  title: string
+  cover_url: string | null
+  instances: DesignInstanceEstimate[]
+}

@@ -11,6 +11,7 @@ from app.api.routers import (
     bambu,
     filament_purchases,
     filament_wishlist,
+    makerworld,
     persons,
     planned_prints,
     print_jobs,
@@ -85,4 +86,5 @@ app.include_router(print_jobs.router)
 app.include_router(planned_prints.router)
 app.include_router(project_wishlist.router)
 app.include_router(bambu.router)
+app.include_router(makerworld.router)
 app.include_router(stats.router)

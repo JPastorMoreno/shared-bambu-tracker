@@ -11,6 +11,8 @@ import type {
   FilamentPurchase,
   FilamentPurchaseCreate,
   FilamentPurchaseUpdate,
+  DesignEstimateRequest,
+  DesignEstimateResponse,
   FilamentWishlistItem,
   FilamentWishlistItemCreate,
   FilamentWishlistItemUpdate,
@@ -340,6 +342,15 @@ export function usePromoteProjectWishlistItem() {
       queryClient.invalidateQueries({ queryKey: CLAVES.inventoryProjection })
       queryClient.invalidateQueries({ queryKey: CLAVES.plannedPrints })
     },
+  })
+}
+
+// --- Mutaciones: estimación desde un enlace de MakerWorld ---
+
+export function useEstimateDesign() {
+  return useMutation({
+    mutationFn: (body: DesignEstimateRequest) =>
+      crear<DesignEstimateResponse>('/makerworld/estimate', body),
   })
 }
 

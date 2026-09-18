@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
-import { useCreateProjectWishlistItem } from '../../api/hooks'
-import type { Person } from '../../api/types'
+import { useCreateProjectWishlistItem, useEstimateDesign } from '../../api/hooks'
+import type { DesignInstanceEstimate, Person } from '../../api/types'
+import { formatGramos } from '../../utils/format'
 
 interface ProjectWishlistFormProps {
   personas: Person[]
@@ -11,7 +12,9 @@ type Beneficiario = 'persona' | 'tercero'
 
 export function ProjectWishlistForm({ personas, personaPreseleccionada }: ProjectWishlistFormProps) {
   const crear = useCreateProjectWishlistItem()
+  const estimar = useEstimateDesign()
 
+  const [enlace, setEnlace] = useState('')
   const [name, setName] = useState('')
   const [tipoBeneficiario, setTipoBeneficiario] = useState<Beneficiario>('persona')
   const [personId, setPersonId] = useState<string>(String(personaPreseleccionada?.id ?? ''))
@@ -28,6 +31,29 @@ export function ProjectWishlistForm({ personas, personaPreseleccionada }: Projec
     setDesiredColor('')
     setExpectedGrams('')
     setNotas('')
+  }
+
+  function manejarEstimar(evento: FormEvent) {
+    evento.preventDefault()
+    if (enlace.trim()) estimar.mutate({ url: enlace.trim() })
+  }
+
+  function usarInstancia(instancia: DesignInstanceEstimate) {
+    const principal = [...instancia.filaments].sort((a, b) => b.grams - a.grams)[0]
+    if (!name && estimar.data) setName(estimar.data.title)
+    if (principal) {
+      setDesiredMaterial(principal.type)
+      setDesiredColor(principal.color_hex ?? '')
+    }
+    setExpectedGrams(String(instancia.total_grams))
+
+    const detalleFilamentos = instancia.filaments
+      .map((f) => `${f.type} ${f.color_hex ?? ''} (${f.grams} g)`.trim())
+      .join(', ')
+    const detalleTiempo = instancia.estimated_print_minutes
+      ? ` · ~${instancia.estimated_print_minutes} min`
+      : ''
+    setNotas(`MakerWorld — ${instancia.title}: ${detalleFilamentos}${detalleTiempo}`)
   }
 
   function manejarEnvio(evento: FormEvent) {
@@ -49,6 +75,65 @@ export function ProjectWishlistForm({ personas, personaPreseleccionada }: Projec
   return (
     <form className="card" onSubmit={manejarEnvio}>
       <p className="card-title">Añadir idea de proyecto</p>
+
+      <div className="paste-order">
+        <div className="form-grid">
+          <div className="form-field">
+            <label htmlFor="pw-enlace">Enlace de MakerWorld (opcional)</label>
+            <input
+              id="pw-enlace"
+              type="url"
+              placeholder="https://makerworld.com/es/models/…"
+              value={enlace}
+              onChange={(e) => setEnlace(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="form-actions">
+          <button
+            type="button"
+            className="btn"
+            onClick={manejarEstimar}
+            disabled={!enlace.trim() || estimar.isPending}
+          >
+            {estimar.isPending ? 'Consultando…' : 'Estimar consumo y tiempo'}
+          </button>
+        </div>
+        {estimar.isError && (
+          <p className="form-error">
+            {estimar.error instanceof Error
+              ? estimar.error.message
+              : 'No se ha podido consultar ese enlace.'}
+          </p>
+        )}
+        {estimar.data && estimar.data.instances.length === 0 && (
+          <p className="form-hint">
+            Ese modelo no tiene ningún perfil de impresión publicado con datos de consumo;
+            rellena el formulario a mano.
+          </p>
+        )}
+        {estimar.data && estimar.data.instances.length > 0 && (
+          <ul className="paste-order-candidates">
+            {estimar.data.instances.map((instancia) => (
+              <li key={instancia.id}>
+                <div>
+                  <strong>{instancia.title}</strong>
+                  <span className="form-hint">
+                    {formatGramos(instancia.total_grams)}
+                    {instancia.estimated_print_minutes && ` · ~${instancia.estimated_print_minutes} min`}
+                    {' · '}
+                    {instancia.filaments.map((f) => f.type).join(' + ') || 'sin filamento detectado'}
+                  </span>
+                </div>
+                <button type="button" className="btn btn-small" onClick={() => usarInstancia(instancia)}>
+                  Usar estos datos
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className="form-grid">
         <div className="form-field">
           <label htmlFor="pw-nombre">Proyecto</label>
