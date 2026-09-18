@@ -1,0 +1,160 @@
+/*
+  Variables de tema. La paleta categórica, secuencial, de estado y de tinta
+  proviene de la skill "dataviz" (paleta de referencia validada con el script
+  de six-checks: orden fijo, nunca ciclada, segura para CVD). No cambiar el
+  orden de los slots categóricos sin volver a pasar el validador.
+*/
+:root {
+  color-scheme: light;
+
+  /* Superficies */
+  --surface-0: #f9f9f7; /* plano de página */
+  --surface-1: #fcfcfb; /* tarjetas / superficie de gráficos */
+  --surface-2: #ffffff;
+  --border-hairline: rgba(11, 11, 11, 0.1);
+
+  /* Tinta */
+  --text-primary: #0b0b0b;
+  --text-secondary: #52514e;
+  --text-muted: #898781;
+  --gridline: #e1e0d9;
+  --axis-baseline: #c3c2b7;
+
+  /* Paleta categórica (orden fijo — identidad, nunca ciclada) */
+  --series-1: #2a78d6; /* azul */
+  --series-2: #eb6834; /* naranja */
+  --series-3: #1baf7a; /* aqua */
+  --series-4: #eda100; /* amarillo */
+  --series-5: #e87ba4; /* magenta */
+  --series-6: #008300; /* verde */
+  --series-7: #4a3aa7; /* violeta */
+  --series-8: #e34948; /* rojo */
+
+  /* Secuencial (azul, claro -> oscuro) */
+  --sequential-100: #cde2fb;
+  --sequential-400: #3987e5;
+  --sequential-700: #0d366b;
+
+  /* Estado (fijo, nunca reutilizado como serie) */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --status-good-text: #006300;
+
+  /* Layout */
+  --radius-card: 12px;
+  --radius-control: 8px;
+  --shadow-card: 0 1px 2px rgba(11, 11, 11, 0.06), 0 1px 1px rgba(11, 11, 11, 0.04);
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --nav-height: 56px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme='light'])) {
+    color-scheme: dark;
+
+    --surface-0: #0d0d0d;
+    --surface-1: #1a1a19;
+    --surface-2: #222221;
+    --border-hairline: rgba(255, 255, 255, 0.1);
+
+    --text-primary: #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted: #898781;
+    --gridline: #2c2c2a;
+    --axis-baseline: #383835;
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-serious: #ec835a;
+    --status-critical: #d03b3b;
+    --status-good-text: #0ca30c;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+
+  --surface-0: #0d0d0d;
+  --surface-1: #1a1a19;
+  --surface-2: #222221;
+  --border-hairline: rgba(255, 255, 255, 0.1);
+
+  --text-primary: #ffffff;
+  --text-secondary: #c3c2b7;
+  --text-muted: #898781;
+  --gridline: #2c2c2a;
+  --axis-baseline: #383835;
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-serious: #ec835a;
+  --status-critical: #d03b3b;
+  --status-good-text: #0ca30c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--surface-0);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-weight: 600;
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+a {
+  color: var(--series-1);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
